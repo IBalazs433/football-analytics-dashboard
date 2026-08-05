@@ -1,0 +1,2 @@
+# Preserve downloaded datasets exactly as-is
+*.csv -text
