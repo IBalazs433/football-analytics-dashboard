@@ -1,0 +1,41 @@
+INSERT OR IGNORE INTO "matches" (
+    "date",
+    "league_id",
+    "season_id",
+    "home_team_id",
+    "away_team_id",
+    "home_goals",
+    "away_goals",
+    "result",
+    "home_shots",
+    "away_shots",
+    "home_shots_on_target",
+    "away_shots_on_target",
+    "home_corners",
+    "away_corners",
+    "home_yellow_cards",
+    "away_yellow_cards",
+    "home_red_cards",
+    "away_red_cards"
+)
+SELECT
+    "staging"."Date",
+    (SELECT "id" FROM "leagues" WHERE "code" = "staging"."Div"),
+    (SELECT "id" FROM "seasons" WHERE "league_id" = (SELECT "id" FROM "leagues" WHERE "code" = "staging"."Div") AND "season" = :season),
+    (SELECT "id" FROM "teams" WHERE "name" = "staging"."HomeTeam"),
+    (SELECT "id" FROM "teams" WHERE "name" = "staging"."AwayTeam"),
+    "staging"."FTHG",
+    "staging"."FTAG",
+    "staging"."FTR",
+    "staging"."HS",
+    "staging"."AS",
+    "staging"."HST",
+    "staging"."AST",
+    "staging"."HC",
+    "staging"."AC",
+    "staging"."HY",
+    "staging"."AY",
+    "staging"."HR",
+    "staging"."AR"
+FROM "staging";
+    
