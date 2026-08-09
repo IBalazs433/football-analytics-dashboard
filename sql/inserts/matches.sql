@@ -19,7 +19,9 @@ INSERT OR IGNORE INTO "matches" (
     "away_red_cards"
 )
 SELECT
-    "staging"."Date",
+    substr("staging"."Date", 7, 4) || '-' ||
+    substr("staging"."Date", 4, 2) || '-' ||
+    substr("staging"."Date", 1, 2),
     (SELECT "id" FROM "leagues" WHERE "code" = "staging"."Div"),
     (SELECT "id" FROM "seasons" WHERE "league_id" = (SELECT "id" FROM "leagues" WHERE "code" = "staging"."Div") AND "season" = :season),
     (SELECT "id" FROM "teams" WHERE "name" = "staging"."HomeTeam"),

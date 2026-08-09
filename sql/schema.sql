@@ -50,9 +50,6 @@ CREATE TABLE IF NOT EXISTS "seasons" (
     "season" TEXT NOT NULL,
 
     UNIQUE("league_id", "season"),
-
-    FOREIGN KEY("country_id")
-        REFERENCES "countries"("id"),
     
     FOREIGN KEY("league_id")
         REFERENCES "leagues"("id")
