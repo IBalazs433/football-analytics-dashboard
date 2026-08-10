@@ -19,7 +19,7 @@ Interactive football analytics dashboard built with **SQLite**, **Python**, **Pa
 
 st.divider()
 
-st.subheader("Project")
+st.header("Project")
 
 st.markdown("""
 Explore football data across **countries**, **leagues**, **seasons**, **teams**, and **individual matches** through interactive tables, statistics, and visualizations.
@@ -32,7 +32,7 @@ Use the navigation menu on the left to start exploring.
 
 st.divider()
 
-st.subheader("Database")
+st.header("Database")
 
 c1, c2, c3 = st.columns(3)
 
@@ -77,7 +77,7 @@ st.metric("Last match in database", queries.get_last_match_date(conn))
 
 st.divider()
 
-st.subheader("Pages")
+st.header("Pages")
 
 st.markdown("""
 📊 **League Analysis** — Analyze league standings, performance, and historical trends.  
