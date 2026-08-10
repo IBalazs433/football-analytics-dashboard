@@ -326,7 +326,11 @@ def get_team_statistics(conn, team, window):
                ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.home_shots ELSE m.away_shots END) / COUNT(*), 2) AS avg_shots_for,
                ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.away_shots ELSE m.home_shots END) / COUNT(*), 2) AS avg_shots_against,
                ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.home_shots_on_target ELSE m.away_shots_on_target END) / COUNT(*), 2) AS avg_shots_on_target_for,
-               ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.away_shots_on_target ELSE m.home_shots_on_target END) / COUNT(*), 2) AS avg_shots_on_target_against
+               ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.away_shots_on_target ELSE m.home_shots_on_target END) / COUNT(*), 2) AS avg_shots_on_target_against,
+               ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.home_yellow_cards ELSE m.away_yellow_cards END) / COUNT(*), 2) AS avg_yellow_cards_for,
+               ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.away_yellow_cards ELSE m.home_yellow_cards END) / COUNT(*), 2) AS avg_yellow_cards_against,
+               ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.home_red_cards ELSE m.away_red_cards END) / COUNT(*), 2) AS avg_red_cards_for,
+               ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t.id THEN m.away_red_cards ELSE m.home_red_cards END) / COUNT(*), 2) AS avg_red_cards_against
         FROM teams t
         JOIN matches m ON m.home_team_id = t.id OR m.away_team_id = t.id
         WHERE t.name = ? AND m.id IN (
@@ -415,8 +419,21 @@ def get_recent_team_form(conn, team, window):
 def get_recent_team_matches(conn, team, window):
     return pd.read_sql(
         """
-        SELECT m.date, ht.name AS home_team, at.name AS away_team,
-               m.home_goals, m.away_goals
+        SELECT 
+            m.date, 
+            ht.name AS home_team, 
+            at.name AS away_team,
+            m.home_goals, 
+            m.away_goals,
+            CASE WHEN ht.name = ? THEN
+                CASE WHEN m.home_goals > m.away_goals THEN 'W'
+                     WHEN m.home_goals < m.away_goals THEN 'L'
+                     ELSE 'D' END
+            ELSE
+                CASE WHEN m.away_goals > m.home_goals THEN 'W'
+                     WHEN m.away_goals < m.home_goals THEN 'L'
+                     ELSE 'D' END
+            END AS result
         FROM matches m
         JOIN teams ht ON ht.id = m.home_team_id
         JOIN teams at ON at.id = m.away_team_id
@@ -425,8 +442,8 @@ def get_recent_team_matches(conn, team, window):
         LIMIT ?
         """,
         conn,
-        params=(team, team, window)
-    )
+        params=(team, team, team, window)
+    )   
 
 
 # -----------------------------
@@ -437,23 +454,24 @@ def get_recent_head_to_head_statistics(conn, team_a, team_b, window):
     return pd.read_sql(
         """
         SELECT
+            COUNT(*) AS matches,
             SUM(CASE WHEN m.home_team_id = t_a.id AND m.home_goals > m.away_goals THEN 1
                      WHEN m.away_team_id = t_a.id AND m.away_goals > m.home_goals THEN 1 ELSE 0 END) AS team_a_wins,
             SUM(CASE WHEN m.home_goals = m.away_goals THEN 1 ELSE 0 END) AS draws,
             SUM(CASE WHEN m.home_team_id = t_b.id AND m.home_goals > m.away_goals THEN 1
                      WHEN m.away_team_id = t_b.id AND m.away_goals > m.home_goals THEN 1 ELSE 0 END) AS team_b_wins,
-            SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_goals ELSE m.away_goals END) AS team_a_goals,
-            SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_goals ELSE m.away_goals END) AS team_b_goals,
-            SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_shots ELSE m.away_shots END) AS team_a_shots,
-            SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_shots ELSE m.away_shots END) AS team_b_shots,
-            SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_shots_on_target ELSE m.away_shots_on_target END) AS team_a_shots_on_target,
-            SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_shots_on_target ELSE m.away_shots_on_target END) AS team_b_shots_on_target,
-            SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_corners ELSE m.away_corners END) AS team_a_corners,
-            SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_corners ELSE m.away_corners END) AS team_b_corners,
-            SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_yellow_cards ELSE m.away_yellow_cards END) AS team_a_yellow_cards,
-            SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_yellow_cards ELSE m.away_yellow_cards END) AS team_b_yellow_cards,
-            SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_red_cards ELSE m.away_red_cards END) AS team_a_red_cards,
-            SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_red_cards ELSE m.away_red_cards END) AS team_b_red_cards
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_goals ELSE m.away_goals END) / COUNT(*), 2) AS avg_team_a_goals,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_goals ELSE m.away_goals END) / COUNT(*), 2) AS avg_team_b_goals,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_shots ELSE m.away_shots END) / COUNT(*), 2) AS avg_team_a_shots,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_shots ELSE m.away_shots END) / COUNT(*), 2) AS avg_team_b_shots,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_shots_on_target ELSE m.away_shots_on_target END) / COUNT(*), 2) AS avg_team_a_shots_on_target,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_shots_on_target ELSE m.away_shots_on_target END) / COUNT(*), 2) AS avg_team_b_shots_on_target,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_corners ELSE m.away_corners END) / COUNT(*), 2) AS avg_team_a_corners,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_corners ELSE m.away_corners END) / COUNT(*), 2) AS avg_team_b_corners,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_yellow_cards ELSE m.away_yellow_cards END) / COUNT(*), 2) AS avg_team_a_yellow_cards,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_yellow_cards ELSE m.away_yellow_cards END) / COUNT(*), 2) AS avg_team_b_yellow_cards,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_a.id THEN m.home_red_cards ELSE m.away_red_cards END) / COUNT(*), 2) AS avg_team_a_red_cards,
+            ROUND(1.0 * SUM(CASE WHEN m.home_team_id = t_b.id THEN m.home_red_cards ELSE m.away_red_cards END) / COUNT(*), 2) AS avg_team_b_red_cards
         FROM matches m
         JOIN teams t_a ON t_a.name = ?
         JOIN teams t_b ON t_b.name = ?
