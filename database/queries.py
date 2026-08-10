@@ -473,13 +473,14 @@ def get_recent_head_to_head_statistics(conn, team_a, team_b, window):
         FROM matches m
         JOIN teams t_a ON t_a.name = ?
         JOIN teams t_b ON t_b.name = ?
-        WHERE (m.home_team_id = t_a.id AND m.away_team_id = t_b.id) OR (m.home_team_id = t_b.id AND m.away_team_id = t_a.id)
+        WHERE ((m.home_team_id = t_a.id AND m.away_team_id = t_b.id) OR (m.home_team_id = t_b.id AND m.away_team_id = t_a.id))
         AND m.id IN (
             SELECT id FROM matches m2
             WHERE (m2.home_team_id = t_a.id AND m2.away_team_id = t_b.id) OR (m2.home_team_id = t_b.id AND m2.away_team_id = t_a.id)
             ORDER BY m2.date DESC
             LIMIT ?
         )
+        HAVING COUNT(*) > 0
         """,
         conn,
         params=(team_a, team_b, window)

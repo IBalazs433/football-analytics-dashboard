@@ -16,16 +16,20 @@ st.set_page_config(
 
 st.sidebar.header("Filters")
 
+countries = queries.get_countries(conn).iloc[:, 0].tolist()
+index = countries.index("England") if "England" in countries else 0
 country = st.sidebar.selectbox(
     "Country",
-    queries.get_countries(conn).iloc[:, 0].tolist(),
-    key="country_selectbox"
+    countries,
+    index=index
 )
 
+teams = queries.get_teams(conn, country).iloc[:, 0].tolist()
+index = teams.index("Liverpool") if "Liverpool" in teams else 0
 team = st.sidebar.selectbox(
     "Team",
-    queries.get_teams(conn, country).iloc[:, 0].tolist(),
-    key="team_selectbox"
+    teams,
+    index=index
 )
 
 window = st.sidebar.selectbox(

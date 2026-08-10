@@ -15,19 +15,26 @@ st.set_page_config(
 
 st.sidebar.header("Filters")
 
+countries = queries.get_countries(conn).iloc[:, 0].tolist()
+index = countries.index("England") if "England" in countries else 0
 country = st.sidebar.selectbox(
     "Country",
-    queries.get_countries(conn).iloc[:, 0].tolist(),
+    countries,
+    index=index
 )
 
+leagues = queries.get_leagues(conn, country).iloc[:, 0].tolist()
+index = leagues.index("Premier League") if "Premier League" in leagues else 0
 league = st.sidebar.selectbox(
     "League",
-    queries.get_leagues(conn, country).iloc[:, 0].tolist(),
+    leagues,
+    index=index
 )
 
 season = st.sidebar.selectbox(
     "Season",
     queries.get_seasons(conn, league).iloc[:, 0].tolist(),
+    index=0
 )
 
 
