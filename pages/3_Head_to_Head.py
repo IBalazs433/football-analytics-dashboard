@@ -17,19 +17,19 @@ st.set_page_config(
 st.sidebar.header("Filters")
 
 country = st.sidebar.selectbox(
-    "Country", 
-    queries.get_countries(conn)
+    "Country",
+    queries.get_countries(conn).iloc[:, 0].tolist(),
 )
 
 team_a = st.sidebar.selectbox(
-    "Team A", 
-    queries.get_teams(conn, country)
+    "Team A",
+    queries.get_teams(conn, country).iloc[:, 0].tolist(),
 )
 
 team_b = st.sidebar.selectbox(
     "Team B",
-    queries.get_teams(conn, country),
-    index=1
+    queries.get_teams(conn, country).iloc[:, 0].tolist(),
+    index=1,
 )
 
 window = st.sidebar.selectbox(
@@ -47,198 +47,205 @@ Compare the historical performance and statistics of two teams across their prev
 
 st.header("Overall Record")
 
-head_to_head_statistics = queries.get_recent_head_to_head_statistics(conn, team_a, team_b, window).iloc[0]
+head_to_head_statistics = queries.get_recent_head_to_head_statistics(conn, team_a, team_b, window)
 
-col1, col2 = st.columns(2)
+if head_to_head_statistics.empty:
+    st.info("No head-to-head statistics found for the selected teams.")
+    st.stop()
 
-with col1:
-    st.metric("Matches", head_to_head_statistics["matches"])
-    st.metric(f"{team_a} Wins", head_to_head_statistics["team_a_wins"])
-    st.metric(f"{team_b} Wins", head_to_head_statistics["team_b_wins"])
-    st.metric("Draws", head_to_head_statistics["draws"])
+else:
+    statistics = head_to_head_statistics.iloc[0]
 
-with col2:
-    outcomes = {
-        "Result": [f"{team_a} Win", f"{team_b} Win", "Draw"],
-        "Matches": [
-            head_to_head_statistics["team_a_wins"], 
-            head_to_head_statistics["team_b_wins"], 
-            head_to_head_statistics["draws"]]
-    }
+    col1, col2 = st.columns(2)
 
-    fig = px.pie(
-        outcomes, 
-        names="Result", 
-        values="Matches", 
-        title=f"Head-to-Head Record: {team_a} vs {team_b}",
-        color="Result",
-        color_discrete_map={
-            f"{team_a} Win": viz.COLORS["wins"],
-            f"{team_b} Win": viz.COLORS["losses"],
-            "Draw": viz.COLORS["draws"],
+    with col1:
+        st.metric("Matches", int(statistics["matches"]))
+        st.metric(f"{team_a} Wins", int(statistics["team_a_wins"]))
+        st.metric(f"{team_b} Wins", int(statistics["team_b_wins"]))
+        st.metric("Draws", int(statistics["draws"]))
+
+    with col2:
+        outcomes = {
+            "Result": [f"{team_a} Win", f"{team_b} Win", "Draw"],
+            "Matches": [
+                statistics["team_a_wins"],
+                statistics["team_b_wins"],
+                statistics["draws"]]
         }
-    )
 
-    viz.apply_common_layout(
-        fig,
-        title=f"Head-to-Head Record: {team_a} vs {team_b}",
-        x_axis_title="",
-        y_axis_title="",
-    )
-    viz.apply_pie_hover(
-        fig,
-        value_label="Matches",
-    )
+        fig = px.pie(
+            outcomes, 
+            names="Result", 
+            values="Matches", 
+            title=f"Head-to-Head Record: {team_a} vs {team_b}",
+            color="Result",
+            color_discrete_map={
+                f"{team_a} Win": viz.COLORS["wins"],
+                f"{team_b} Win": viz.COLORS["losses"],
+                "Draw": viz.COLORS["draws"],
+            }
+        )
 
-    viz.render_chart(st, fig)
+        viz.apply_common_layout(
+            fig,
+            title=f"Head-to-Head Record: {team_a} vs {team_b}",
+            x_axis_title="",
+            y_axis_title="",
+        )
+        viz.apply_pie_hover(
+            fig,
+            value_label="Matches",
+        )
 
-c1, c2 = st.columns(2)
+        viz.render_chart(st, fig)
 
-with c1:
-    goals = pd.DataFrame({
-        "Statistic": [f"Goals For {team_a}", f"Goals For {team_b}"],
-        "Average per Match": [
-            head_to_head_statistics["avg_team_a_goals"],
-            head_to_head_statistics["avg_team_b_goals"],
-        ]
-    })
+    c1, c2 = st.columns(2)
 
-    fig = px.bar(
-        goals,
-        orientation='h',
-        x="Average per Match",
-        y="Statistic",
-        title="Goals per Match",
-        color="Statistic",
-        color_discrete_map={
-            f"Goals For {team_a}": viz.COLORS["for"],
-            f"Goals For {team_b}": viz.COLORS["against"],
-        }
-    )
+    with c1:
+        goals = pd.DataFrame({
+            "Statistic": [f"Goals For {team_a}", f"Goals For {team_b}"],
+            "Average per Match": [
+                statistics["avg_team_a_goals"],
+                statistics["avg_team_b_goals"],
+            ]
+        })
 
-    viz.apply_common_layout(
-        fig,
-        title="Goals per Match",
-        x_axis_title="Average per Match",
-        y_axis_title="",
-    )
-    viz.apply_category_hover(
-        fig,
-        category_label="",
-        value_label="Average per Match",
-    )
+        fig = px.bar(
+            goals,
+            orientation='h',
+            x="Average per Match",
+            y="Statistic",
+            title="Goals per Match",
+            color="Statistic",
+            color_discrete_map={
+                f"Goals For {team_a}": viz.COLORS["for"],
+                f"Goals For {team_b}": viz.COLORS["against"],
+            }
+        )
 
-    viz.render_chart(st, fig)
+        viz.apply_common_layout(
+            fig,
+            title="Goals per Match",
+            x_axis_title="Average per Match",
+            y_axis_title="",
+        )
+        viz.apply_category_hover(
+            fig,
+            category_label="",
+            value_label="Average per Match",
+        )
 
-with c2:
-    shots = pd.DataFrame({
-        "Team": [f"{team_a}", f"{team_b}"],
-        "Shots on Target": [
-            head_to_head_statistics["avg_team_a_shots_on_target"],
-            head_to_head_statistics["avg_team_b_shots_on_target"],
-        ],
-        "Shots off Target": [
-            head_to_head_statistics["avg_team_a_shots"] - head_to_head_statistics["avg_team_a_shots_on_target"],
-            head_to_head_statistics["avg_team_b_shots"] - head_to_head_statistics["avg_team_b_shots_on_target"]
-        ]
-    })
+        viz.render_chart(st, fig)
 
-    fig = px.bar(
-        shots,
-        x=["Shots on Target", "Shots off Target"],
-        y="Team",
-        orientation="h",
-        title="Shots per Match",
-        color_discrete_map={
-            "Shots on Target": viz.COLORS["shots_on_target"],
-            "Shots off Target": viz.COLORS["shots_off_target"],
-        }
-    )
+    with c2:
+        shots = pd.DataFrame({
+            "Team": [f"{team_a}", f"{team_b}"],
+            "Shots on Target": [
+                statistics["avg_team_a_shots_on_target"],
+                statistics["avg_team_b_shots_on_target"],
+            ],
+            "Shots off Target": [
+                statistics["avg_team_a_shots"] - statistics["avg_team_a_shots_on_target"],
+                statistics["avg_team_b_shots"] - statistics["avg_team_b_shots_on_target"]
+            ]
+        })
 
-    viz.apply_common_layout(
-        fig,
-        title="Shots per Match",
-        x_axis_title="Average per Match",
-        y_axis_title="",
-    )
-    fig.update_layout(barmode="stack")
-    viz.apply_stacked_hover(fig, category_axis="y")
+        fig = px.bar(
+            shots,
+            x=["Shots on Target", "Shots off Target"],
+            y="Team",
+            orientation="h",
+            title="Shots per Match",
+            color_discrete_map={
+                "Shots on Target": viz.COLORS["shots_on_target"],
+                "Shots off Target": viz.COLORS["shots_off_target"],
+            }
+        )
 
-    viz.render_chart(st, fig)
+        viz.apply_common_layout(
+            fig,
+            title="Shots per Match",
+            x_axis_title="Average per Match",
+            y_axis_title="",
+        )
+        fig.update_layout(barmode="stack")
+        viz.apply_stacked_hover(fig, category_axis="y")
 
-c1, c2 = st.columns(2)
+        viz.render_chart(st, fig)
 
-with c1:
-    corners = pd.DataFrame({
-        "Statistic": [f"Corners For {team_a}", f"Corners For {team_b}"],
-        "Average per Match": [
-            head_to_head_statistics["avg_team_a_corners"],
-            head_to_head_statistics["avg_team_b_corners"]
-        ]
-    })
+    c1, c2 = st.columns(2)
 
-    fig = px.bar(
-        corners,
-        orientation='h',
-        x="Average per Match",
-        y="Statistic",
-        title="Corners per Match",
-        color="Statistic",
-        color_discrete_map={
-            f"Corners For {team_a}": viz.COLORS["for"],
-            f"Corners For {team_b}": viz.COLORS["against"],
-        }
-    )
+    with c1:
+        corners = pd.DataFrame({
+            "Statistic": [f"Corners For {team_a}", f"Corners For {team_b}"],
+            "Average per Match": [
+                statistics["avg_team_a_corners"],
+                statistics["avg_team_b_corners"]
+            ]
+        })
 
-    viz.apply_common_layout(
-        fig,
-        title="Corners per Match",
-        x_axis_title="Average per Match",
-        y_axis_title="",
-    )
-    viz.apply_category_hover(
-        fig,
-        category_label="",
-        value_label="Average per Match",
-    )
+        fig = px.bar(
+            corners,
+            orientation='h',
+            x="Average per Match",
+            y="Statistic",
+            title="Corners per Match",
+            color="Statistic",
+            color_discrete_map={
+                f"Corners For {team_a}": viz.COLORS["for"],
+                f"Corners For {team_b}": viz.COLORS["against"],
+            }
+        )
 
-    viz.render_chart(st, fig)
+        viz.apply_common_layout(
+            fig,
+            title="Corners per Match",
+            x_axis_title="Average per Match",
+            y_axis_title="",
+        )
+        viz.apply_category_hover(
+            fig,
+            category_label="",
+            value_label="Average per Match",
+        )
 
-with c2:
-    cards = pd.DataFrame({
-        "Team": [f"{team_a}", f"{team_b}"],
-        "Yellow Cards": [
-            head_to_head_statistics["avg_team_a_yellow_cards"],
-            head_to_head_statistics["avg_team_b_yellow_cards"]
-        ],
-        "Red Cards": [
-            head_to_head_statistics["avg_team_a_red_cards"],
-            head_to_head_statistics["avg_team_b_red_cards"]
-        ]
-    })
+        viz.render_chart(st, fig)
 
-    fig = px.bar(
-        cards,
-        x=["Yellow Cards", "Red Cards"],
-        y="Team",
-        orientation="h",
-        title="Cards per Match",
-        color_discrete_map={
-            "Yellow Cards": viz.COLORS["for"],
-            "Red Cards": viz.COLORS["red_cards"],
-        }
-    )
+    with c2:
+        cards = pd.DataFrame({
+            "Team": [f"{team_a}", f"{team_b}"],
+            "Yellow Cards": [
+                statistics["avg_team_a_yellow_cards"],
+                statistics["avg_team_b_yellow_cards"]
+            ],
+            "Red Cards": [
+                statistics["avg_team_a_red_cards"],
+                statistics["avg_team_b_red_cards"]
+            ]
+        })
 
-    viz.apply_common_layout(
-        fig,
-        title="Cards per Match",
-        x_axis_title="Average per Match",
-        y_axis_title="",
-    )
-    fig.update_layout(barmode="stack")
-    viz.apply_stacked_hover(fig, category_axis="y")
+        fig = px.bar(
+            cards,
+            x=["Yellow Cards", "Red Cards"],
+            y="Team",
+            orientation="h",
+            title="Cards per Match",
+            color_discrete_map={
+                "Yellow Cards": viz.COLORS["for"],
+                "Red Cards": viz.COLORS["red_cards"],
+            }
+        )
 
-    viz.render_chart(st, fig)
+        viz.apply_common_layout(
+            fig,
+            title="Cards per Match",
+            x_axis_title="Average per Match",
+            y_axis_title="",
+        )
+        fig.update_layout(barmode="stack")
+        viz.apply_stacked_hover(fig, category_axis="y")
+
+        viz.render_chart(st, fig)
 
 
 st.divider()
@@ -247,9 +254,8 @@ recent_head_to_head_matches = queries.get_recent_head_to_head_matches(conn, team
 
 st.header(f"Last Matches")
 
-
 if recent_head_to_head_matches.empty:
-    st.info("No matches found.")
+    st.info("No head-to-head matches found for the selected teams.")
 
 else:
     rows = ""

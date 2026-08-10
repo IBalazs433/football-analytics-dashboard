@@ -18,13 +18,13 @@ st.sidebar.header("Filters")
 
 country = st.sidebar.selectbox(
     "Country",
-    queries.get_countries(conn),
+    queries.get_countries(conn).iloc[:, 0].tolist(),
     key="country_selectbox"
 )
 
 team = st.sidebar.selectbox(
     "Team",
-    queries.get_teams(conn, country),
+    queries.get_teams(conn, country).iloc[:, 0].tolist(),
     key="team_selectbox"
 )
 
@@ -42,7 +42,13 @@ st.markdown("""Analyse an individual team's performance, form, and statistics ac
 
 st.header("Overview")
 
-statistics = queries.get_team_statistics(conn, team, window).iloc[0]
+team_statistics = queries.get_team_statistics(conn, team, window)
+
+if team_statistics.empty:
+    st.info("No team statistics found for the selected filters.")
+    st.stop()
+
+statistics = team_statistics.iloc[0]
 
 c1, c2 = st.columns(2)
 
@@ -244,38 +250,8 @@ with c2:
 st.divider()
 
 st.header("Recent Form")
-form = queries.get_recent_team_form(conn, team, window).split(" ")
-
-colors = {
-    "W": "#119DA4",
-    "D": "#FFC857",
-    "L": "#1F2041",
-    "?": "#808080",
-}
-
-form_html = '<div style="display: flex; gap: 6px; flex-wrap: nowrap;">'
-
-for result in form:
-    form_html += f"""
-    <div style="
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        border-radius: 5px;
-        background-color: {colors[result]};
-        color: white;
-        font-weight: 600;
-    ">
-        {result}
-    </div>
-    """
-
-form_html += "</div>"
-
-st.html(form_html)
+form = queries.get_recent_team_form(conn, team, window)
+viz.render_form_badges(st, form)
 
 
 st.divider()

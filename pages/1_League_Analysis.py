@@ -17,17 +17,17 @@ st.sidebar.header("Filters")
 
 country = st.sidebar.selectbox(
     "Country",
-    queries.get_countries(conn),
+    queries.get_countries(conn).iloc[:, 0].tolist(),
 )
 
 league = st.sidebar.selectbox(
     "League",
-    queries.get_leagues(conn, country),
+    queries.get_leagues(conn, country).iloc[:, 0].tolist(),
 )
 
 season = st.sidebar.selectbox(
     "Season",
-    queries.get_seasons(conn, league)
+    queries.get_seasons(conn, league).iloc[:, 0].tolist(),
 )
 
 
@@ -41,6 +41,10 @@ Analyse league performance across seasons, including standings, match statistics
 st.header("Overview")
 
 statistics = queries.get_league_statistics(conn, league, season)
+
+if statistics.empty:
+    st.info("No league statistics found for the selected filters.")
+    st.stop()
 
 c1, c2, c3 = st.columns(3)
 
@@ -189,8 +193,8 @@ with tab2:
         ],
         markers=True,
         color_discrete_map={
-            "Shots per Match": viz.COLORS["for"],
-            "Shots on Target per Match": viz.COLORS["shots_on_target"],
+            "Shots per Match": viz.COLORS["shots_on_target"],
+            "Shots on Target per Match": viz.COLORS["shots_off_target"],
         },
     )
     viz.apply_common_layout(

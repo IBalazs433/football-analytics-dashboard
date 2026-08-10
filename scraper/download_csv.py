@@ -9,15 +9,21 @@ from config.settings import RAW_DATA_DIR
 
 
 def download_csv(country: str, league_name: str, league_code: str, season: str) -> None:
-    """
-    Download CSV data for a given league and season from football-data.co.uk.
-    """
+    """Download a single league-season CSV file and save it under the raw data directory."""
+
+    target_dir = RAW_DATA_DIR / country
+    target_dir.mkdir(parents=True, exist_ok=True)
 
     url = f"{BASE_URL}/{season}/{league_code}.csv"
-    response = requests.get(url)
-    if response.status_code == 200:
-        with open(f"{RAW_DATA_DIR}/{country}/{league_code}_{season}.csv", "wb") as f:
-            f.write(response.content)
-        print(f"Downloaded {league_name} {season} data.")
-    else:
-        print(f"Failed to download {league_code} {league_name} {season} data. Status code: {response.status_code}")
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Failed to download {league_code} {league_name} {season} data. Reason: {exc}")
+        return
+
+    target_path = target_dir / f"{league_code}_{season}.csv"
+    with open(target_path, "wb") as f:
+        f.write(response.content)
+
+    print(f"Downloaded {league_name} {season} data.")

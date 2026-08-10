@@ -5,13 +5,14 @@ import sqlite3
 
 
 def import_season(conn: sqlite3.Connection, league_code: str, league: dict, season: str) -> None:
-    """
-    Imports match data for a specific league and season into the database.
-    """
+    """Import one league-season file into the SQLite staging table and finalize the related records."""
 
     csv_path = DATA_DIR / "raw" / league["country"] / f"{league_code}_{season}.csv"
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Expected data file not found: {csv_path}")
+
     df = pd.read_csv(csv_path)
-    df = df[MATCH_COLUMNS]  # Select only the relevant columns
+    df = df.loc[:, MATCH_COLUMNS]
     df.to_sql("staging", conn, if_exists="append", index=False)
 
     teams_home_sql = (SQL_DIR / "inserts" / "teams_home.sql").read_text(encoding="utf-8")
@@ -30,4 +31,5 @@ def import_season(conn: sqlite3.Connection, league_code: str, league: dict, seas
     conn.execute(matches_sql, {"season": f"{season[:2]}-{season[2:4]}"})
     print(f"Inserted {league['name']} {season} data into the database.")
 
-    conn.execute("DELETE FROM staging") # Clear the staging table after processing
+    conn.execute("DELETE FROM staging")
+    conn.commit()

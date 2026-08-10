@@ -51,11 +51,14 @@ with c3:
 st.markdown("""
 **Current coverage**
 
-🇬🇧 **England** — Premier League  
-🇩🇪 **Germany** — Bundesliga  
-🇪🇸 **Spain** — La Liga  
-🇮🇹 **Italy** — Serie A  
-🇫🇷 **France** — Ligue 1
+🇬🇧 **England** — Premier League, Championship, League One  
+🇩🇪 **Germany** — Bundesliga, 2. Bundesliga  
+🇪🇸 **Spain** — La Liga, Segunda División  
+🇮🇹 **Italy** — Serie A, Serie B  
+🇫🇷 **France** — Ligue 1, Ligue 2  
+🏴󠁧󠁢󠁳󠁣󠁴󠁿 **Scotland** — Premiership  
+🇳🇱 **Netherlands** — Eredivisie  
+🇧🇪 **Belgium** — Jupiler Pro League  
 """)
 
 st.markdown("""
@@ -81,7 +84,7 @@ st.header("Pages")
 
 st.markdown("""
 📊 **League Analysis** — Analyze league standings, performance, and historical trends.  
-⚽ **Team Analysis** — Explore team form, performance, and match statistics.  
+📋 **Team Analysis** — Explore team form, performance, and match statistics.  
 🤝 **Head-to-Head** — Compare the historical performance of two teams.  
 🔎 **Match Analysis** — Explore detailed statistics for individual matches.  
 """)

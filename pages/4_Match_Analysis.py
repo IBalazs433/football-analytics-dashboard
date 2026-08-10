@@ -18,34 +18,34 @@ st.set_page_config(
 st.sidebar.header("Filters")
 
 country = st.sidebar.selectbox(
-    "Country", 
-    queries.get_countries(conn)
+    "Country",
+    queries.get_countries(conn).iloc[:, 0].tolist(),
 )
 
 league = st.sidebar.selectbox(
-    "League", 
-    queries.get_leagues(conn, country)
+    "League",
+    queries.get_leagues(conn, country).iloc[:, 0].tolist(),
 )
 
 season = st.sidebar.selectbox(
-    "Season", 
-    queries.get_seasons(conn, league)
+    "Season",
+    queries.get_seasons(conn, league).iloc[:, 0].tolist(),
 )
 
 home_team = st.sidebar.selectbox(
-    "Home Team", 
-    queries.get_teams_from_season(conn, country, league, season)
+    "Home Team",
+    queries.get_teams_from_season(conn, country, league, season).iloc[:, 0].tolist(),
 )
 
 away_team = st.sidebar.selectbox(
-    "Away Team", 
-    queries.get_teams_from_season(conn, country, league, season),
-    index=1
+    "Away Team",
+    queries.get_teams_from_season(conn, country, league, season).iloc[:, 0].tolist(),
+    index=1,
 )
 
 date = st.sidebar.selectbox(
-    "Date", 
-    queries.get_match_dates(conn, country, league, season, home_team, away_team)
+    "Date",
+    queries.get_match_dates(conn, country, league, season, home_team, away_team).iloc[:, 0].tolist(),
 )
 
 
@@ -125,72 +125,12 @@ else:
     st.divider()
 
     st.header(f"{home_team} Form Before Match")
-    form = queries.get_recent_team_form_before_date(conn, home_team, 5, date=date).split(" ")
-
-    colors = {
-        "W": "#119DA4",
-        "D": "#FFC857",
-        "L": "#1F2041",
-        "?": "#808080",
-    }
-
-    form_html = '<div style="display: flex; gap: 6px; flex-wrap: nowrap;">'
-
-    for result in form:
-        form_html += f"""
-        <div style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 32px;
-            height: 32px;
-            min-width: 32px;
-            border-radius: 5px;
-            background-color: {colors[result]};
-            color: white;
-            font-weight: 600;
-        ">
-            {result}
-        </div>
-        """
-
-    form_html += "</div>"
-
-    st.html(form_html)        
+    form = queries.get_recent_team_form_before_date(conn, home_team, 5, date=date)
+    viz.render_form_badges(st, form)
 
     st.header(f"{away_team} Form Before Match")
-    form = queries.get_recent_team_form_before_date(conn, away_team, 5, date=date).split(" ")
-
-    colors = {
-        "W": "#119DA4",
-        "D": "#FFC857",
-        "L": "#1F2041",
-        "?": "#808080",
-    }
-
-    form_html = '<div style="display: flex; gap: 6px; flex-wrap: nowrap;">'
-
-    for result in form:
-        form_html += f"""
-        <div style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 32px;
-            height: 32px;
-            min-width: 32px;
-            border-radius: 5px;
-            background-color: {colors[result]};
-            color: white;
-            font-weight: 600;
-        ">
-            {result}
-        </div>
-        """
-
-    form_html += "</div>"
-
-    st.html(form_html)
+    form = queries.get_recent_team_form_before_date(conn, away_team, 5, date=date)
+    viz.render_form_badges(st, form)
 
 
     st.divider()

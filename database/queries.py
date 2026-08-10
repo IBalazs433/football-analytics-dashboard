@@ -1,5 +1,3 @@
-from curses import window
-
 from config.settings import DATA_DIR
 import pandas as pd
 import sqlite3
@@ -44,7 +42,7 @@ def get_leagues(conn: sqlite3.Connection, country: str) -> pd.DataFrame:
         JOIN countries c
           ON c.id = l.country_id
         WHERE c.name = ?
-        ORDER BY l.name
+        ORDER BY l.code
         """,
         conn,
         params=(country,)

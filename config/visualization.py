@@ -1,5 +1,4 @@
 import pandas as pd
-import plotly.express as px
 
 
 COLORS = {
@@ -16,6 +15,7 @@ COLORS = {
 
 
 def sort_seasons(df: pd.DataFrame, season_column: str = "season") -> pd.DataFrame:
+    """Return a season DataFrame sorted chronologically from earliest to latest."""
     return df.sort_values(by=season_column, ascending=True)
 
 
@@ -28,6 +28,7 @@ def apply_common_layout(
     y_tickformat: str = ",.2f",
     x_tickformat: str | None = None,
 ):
+    """Apply the shared Plotly styling used throughout the dashboard."""
     fig.update_layout(
         template="plotly_white",
         title=title,
@@ -49,6 +50,7 @@ def apply_standard_hover(
     y_label: str,
     value_format: str = ",.2f",
 ):
+    """Apply a consistent hover template for simple line/bar charts."""
     fig.update_traces(
         hovertemplate=(
             f"<b>%{{fullData.name}}</b><br>"
@@ -66,6 +68,7 @@ def apply_category_hover(
     value_label: str,
     value_format: str = ",.2f",
 ):
+    """Apply the hover formatting used for horizontal category charts."""
     fig.update_traces(
         hovertemplate=(
             f"<b>%{{y}}</b><br>"
@@ -78,6 +81,7 @@ def apply_category_hover(
 
 
 def apply_stacked_hover(fig, category_axis: str, value_format: str = ",.2f"):
+    """Apply hover formatting for stacked bar charts."""
     if category_axis == "y":
         fig.update_traces(
             hovertemplate=(
@@ -98,6 +102,7 @@ def apply_stacked_hover(fig, category_axis: str, value_format: str = ",.2f"):
 
 
 def apply_pie_hover(fig, value_label: str):
+    """Apply the hover formatting used for pie charts."""
     fig.update_traces(
         hovertemplate=(
             "<b>%{label}</b><br>"
@@ -109,5 +114,35 @@ def apply_pie_hover(fig, value_label: str):
     return fig
 
 
+def render_form_badges(st, form_string: str) -> None:
+    """Render a compact form summary with the shared dashboard badge colors."""
+    if not form_string:
+        return
+
+    colors = {
+        "W": COLORS["wins"],
+        "D": COLORS["draws"],
+        "L": COLORS["losses"],
+        "?": COLORS["neutral"],
+    }
+
+    results = [result for result in form_string.split() if result]
+    if not results:
+        return
+
+    badges = []
+    for result in results:
+        badges.append(
+            f"""
+            <div style="display: flex; justify-content: center; align-items: center; width: 32px; height: 32px; min-width: 32px; border-radius: 5px; background-color: {colors.get(result, COLORS['neutral'])}; color: white; font-weight: 600;">
+                {result}
+            </div>
+            """
+        )
+
+    st.html(f'<div style="display: flex; gap: 6px; flex-wrap: wrap;">{"".join(badges)}</div>')
+
+
 def render_chart(st, fig):
-    st.plotly_chart(fig, use_container_width=True)
+    """Render a Plotly chart using the shared dashboard stretch layout."""
+    st.plotly_chart(fig, width="stretch")
